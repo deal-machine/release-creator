@@ -32,3 +32,35 @@
 1. A versão no package.json será incrementada automaticamente.
 2. Um commit será feito com a mensagem: chore: bump version to x.y.z.
 3. Uma nova branch chamada release/vx.y.z será criada e enviada ao repositório remoto.
+
+<br>
+
+## Release Train
+
+<br>
+
+<div align="center">
+
+![Release Train Example](image.png)
+
+</div>
+<br>
+
+
+## Fluxo Completo
+
+1. Define-se o prazo ou quais features vão entrar na release.
+2. A Action:
+    - Lê a versão do package.json.
+    - Incrementa a versão (patch, minor, ou major).
+    - Cria a branch release/vx.y.z.
+    - Atualiza o package.json e faz commit.
+    - (Opcional) Cria um Pull Request para integrar a branch de release.
+3. Equipe revisa as branches (feature/fix/etc...) que irão compor a release.
+4. Após o merge, um novo workflow publica o release automaticamente.
+
+### Benefícios
+
+- Previsibilidade: Releases regulares aumentam a confiança do time e dos stakeholders.
+- Automação: Minimiza o esforço manual com integração contínua.
+- Flexibilidade: Funcionalidades não finalizadas simplesmente aguardam o próximo ciclo.
