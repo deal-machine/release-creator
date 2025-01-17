@@ -1,4 +1,4 @@
-name: Create Feature, Bugfix, or Hotfix Branch from Selected Release and Update Version
+name: Create Branch from Selected Release and Update Version
 
 on:
   workflow_dispatch:
@@ -11,10 +11,6 @@ on:
         description: 'Type of branch: feature, bugfix, or hotfix'
         required: true
         default: 'feature'
-      source_branch:
-        description: 'The release branch from which the new branch will be created (e.g., release/1.0.0)'
-        required: true
-        default: 'release/1.0.0'
 
 permissions:
   contents: write
@@ -32,28 +28,26 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Checkout the selected release branch
+      - name: Checkout the branch specified in "Use workflow from"
         run: |
-          echo "Checking out the branch: ${{ inputs.source_branch }}"
+          # O GitHub Actions automaticamente sabe qual branch foi selecionada
+          echo "Checking out the branch: $GITHUB_REF"
           git fetch --all
-          git checkout "origin/${{ inputs.source_branch }}"
-          git pull origin "${{ inputs.source_branch }}"
+          git checkout $GITHUB_REF
+          git pull origin $GITHUB_REF
 
       - name: Get the release version
         id: get_release_version
         run: |
-          # A versão da release será obtida diretamente do nome da branch fornecida
-          RELEASE_VERSION="${{ inputs.source_branch }}" 
-          RELEASE_VERSION=${RELEASE_VERSION//release\//}  # Remove o prefixo "release/"
+          RELEASE_VERSION="${GITHUB_REF##*/}"
+          RELEASE_VERSION=${RELEASE_VERSION//release\//}
           echo "Release version: $RELEASE_VERSION"
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
       - name: Increment version based on input type
         run: |
-          # Extrai a versão da release selecionada
           IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.RELEASE_VERSION }}"
 
-          # Incrementa a versão conforme o tipo
           if [[ "${{ inputs.type }}" == "major" ]]; then
             MAJOR=$((MAJOR + 1))
             MINOR=0
