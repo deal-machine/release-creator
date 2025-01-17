@@ -37,7 +37,7 @@ jobs:
 
       - name: Increment version based on input type
         run: |
-          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.VERSION//v/ }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.VERSION }}"
 
           if [[ "${{ inputs.type }}" == "major" ]]; then
             MAJOR=$((MAJOR + 1))
