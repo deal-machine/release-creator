@@ -1,6 +1,6 @@
 {
   "name": "release-creator",
-  "version": "vv1.2.0",
+  "version": "vv1.3.0",
   "description": "",
   "main": "index.js",
   "scripts": {
