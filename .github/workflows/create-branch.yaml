@@ -1,4 +1,4 @@
-name: Create Feature, Bugfix, or Hotfix Branch from Latest Release and Update Version
+name: Create Feature, Bugfix, or Hotfix Branch from Selected Release and Update Version
 
 on:
   workflow_dispatch:
@@ -11,12 +11,16 @@ on:
         description: 'Type of branch: feature, bugfix, or hotfix'
         required: true
         default: 'feature'
+      source_branch:
+        description: 'The release branch from which the new branch will be created (e.g., release/1.0.0)'
+        required: true
+        default: 'release/1.0.0'
 
 permissions:
   contents: write
 
 jobs:
-  create-branch-from-latest-release:
+  create-branch-from-selected-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,27 +32,26 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Fetch all release branches
-        id: fetch_branches
+      - name: Checkout the selected release branch
         run: |
+          echo "Checking out the branch: ${{ inputs.source_branch }}"
           git fetch --all
-          RELEASE_BRANCHES=$(git branch -r | grep 'origin/release/' | sort -V)
-          echo "Release branches: $RELEASE_BRANCHES"
-          echo "RELEASE_BRANCHES=$RELEASE_BRANCHES" >> $GITHUB_ENV
+          git checkout "origin/${{ inputs.source_branch }}"
+          git pull origin "${{ inputs.source_branch }}"
 
-      - name: Get the latest release version
-        id: get_latest_release
+      - name: Get the release version
+        id: get_release_version
         run: |
-          # Pega a última release (última versão disponível no repositório)
-          LATEST_RELEASE=$(echo "${{ env.RELEASE_BRANCHES }}" | tail -n 1)
-          LATEST_VERSION=$(echo $LATEST_RELEASE | sed 's/origin\/release\///')
-          echo "Latest release version: $LATEST_VERSION"
-          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+          # A versão da release será obtida diretamente do nome da branch fornecida
+          RELEASE_VERSION="${{ inputs.source_branch }}" 
+          RELEASE_VERSION=${RELEASE_VERSION//release\//}  # Remove o prefixo "release/"
+          echo "Release version: $RELEASE_VERSION"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
       - name: Increment version based on input type
         run: |
-          # Extraí a versão da release mais recente
-          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.LATEST_VERSION }}"
+          # Extrai a versão da release selecionada
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.RELEASE_VERSION }}"
 
           # Incrementa a versão conforme o tipo
           if [[ "${{ inputs.type }}" == "major" ]]; then
@@ -72,10 +75,10 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
           git commit -m "chore: update version to $NEW_VERSION"
+
           # git push origin HEAD
 
-          # git checkout "origin/release/${{ env.LATEST_VERSION }}"
-          
           BRANCH_NAME="${{ inputs.branch_type }}/$NEW_VERSION"
+          echo "Creating new branch: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME
