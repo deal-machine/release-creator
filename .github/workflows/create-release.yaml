@@ -55,6 +55,6 @@ jobs:
           git add package.json
           git commit -m "chore: bump version to $NEW_VERSION"
 
-          BRANCH_NAME="release/v$NEW_VERSION"
+          BRANCH_NAME="release/$NEW_VERSION"
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME

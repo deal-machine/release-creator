@@ -55,7 +55,7 @@ jobs:
           fi
 
           # Nova versão
-          NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "New version: $NEW_VERSION"
 
           # Atualiza o package.json com a nova versão
@@ -69,8 +69,7 @@ jobs:
           git commit -m "chore: update version to $NEW_VERSION"
           git push origin HEAD
 
-      - name: Create the new branch
-        run: |
           BRANCH_NAME="${{ inputs.branch_type }}/$NEW_VERSION"
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME
+          
