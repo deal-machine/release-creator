@@ -7,7 +7,8 @@ on:
         description: 'Type of version update: patch, minor, or major'
         required: true
         default: 'patch'
-
+permissions:
+  contents: write
 jobs:
   create-release-branch:
     runs-on: ubuntu-latest
