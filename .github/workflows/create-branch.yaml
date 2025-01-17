@@ -11,10 +11,8 @@ on:
         description: 'Type of branch: feature, bugfix, or hotfix'
         required: true
         default: 'feature'
-
 permissions:
   contents: write
-
 jobs:
   create-branch-from-latest-release:
     runs-on: ubuntu-latest
@@ -39,23 +37,16 @@ jobs:
       - name: Get the latest release version
         id: get_latest_release
         run: |
+          # Pega a última release (última versão disponível no repositório)
           LATEST_RELEASE=$(echo "${{ env.RELEASE_BRANCHES }}" | tail -n 1)
           LATEST_VERSION=$(echo $LATEST_RELEASE | sed 's/origin\/release\///')
           echo "Latest release version: $LATEST_VERSION"
           echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
-      - name: Get current version from package.json
-        id: get_version
-        run: |
-          # Lê a versão atual do package.json
-          VERSION=$(jq -r '.version' package.json)
-          echo "Current version: $VERSION"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
       - name: Increment version based on input type
         run: |
-          # Extraí a versão atual
-          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.VERSION }}"
+          # Extraí a versão da release mais recente
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.LATEST_VERSION }}"
 
           # Incrementa a versão conforme o tipo
           if [[ "${{ inputs.type }}" == "major" ]]; then
@@ -85,8 +76,7 @@ jobs:
           git push origin HEAD
 
           git checkout "origin/release/${{ env.LATEST_VERSION }}"
-      
+          
           BRANCH_NAME="${{ inputs.branch_type }}/$NEW_VERSION"
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME
-          
