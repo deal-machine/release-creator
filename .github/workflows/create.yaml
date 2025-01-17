@@ -1,0 +1,63 @@
+name: Manage and Create Release Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Type of version update: patch, minor, or major'
+        required: true
+        default: 'patch'
+
+jobs:
+  create-release-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Update version and create release branch
+        env:
+          UPDATE_TYPE: ${{ inputs.type }}
+        run: |
+          # Lê a versão atual do package.json
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+
+          # Separa versão atual em partes: major.minor.patch
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          # Atualiza a versão com base no tipo
+          if [[ "$UPDATE_TYPE" == "major" ]]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [[ "$UPDATE_TYPE" == "minor" ]]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+
+          # Atualiza a versão no package.json
+          jq --arg version "$NEW_VERSION" '.version = $version' package.json > package.tmp.json
+          mv package.tmp.json package.json
+
+          # Faz commit das alterações no package.json
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION"
+
+          # Cria a nova branch com o nome release/{nova versão}
+          BRANCH_NAME="release/v$NEW_VERSION"
+          git checkout -b $BRANCH_NAME
+          git push origin $BRANCH_NAME
