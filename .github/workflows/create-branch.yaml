@@ -1,4 +1,4 @@
-name: Create Feature, Bugfix, or Hotfix Branch and Update Version
+name: Create Feature, Bugfix, or Hotfix Branch from Latest Release and Update Version
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 jobs:
-  create-branch-and-update-version:
+  create-branch-from-latest-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,6 +27,22 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      - name: Fetch all release branches
+        id: fetch_branches
+        run: |
+          git fetch --all
+          RELEASE_BRANCHES=$(git branch -r | grep 'origin/release/' | sort -V)
+          echo "Release branches: $RELEASE_BRANCHES"
+          echo "RELEASE_BRANCHES=$RELEASE_BRANCHES" >> $GITHUB_ENV
+
+      - name: Get the latest release version
+        id: get_latest_release
+        run: |
+          LATEST_RELEASE=$(echo "${{ env.RELEASE_BRANCHES }}" | tail -n 1)
+          LATEST_VERSION=$(echo $LATEST_RELEASE | sed 's/origin\/release\///')
+          echo "Latest release version: $LATEST_VERSION"
+          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
 
       - name: Get current version from package.json
         id: get_version
@@ -40,7 +56,6 @@ jobs:
         run: |
           # Extraí a versão atual
           IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.VERSION }}"
-          echo "Env version: ${{ env.VERSION }}"
 
           # Incrementa a versão conforme o tipo
           if [[ "${{ inputs.type }}" == "major" ]]; then
@@ -69,7 +84,13 @@ jobs:
           git commit -m "chore: update version to $NEW_VERSION"
           git push origin HEAD
 
+      - name: Checkout latest release branch
+        run: |
+          # Checa a branch mais recente
+          git checkout "origin/release/${{ env.LATEST_VERSION }}"
+
+      - name: Create the new branch from latest release
+        run: |
           BRANCH_NAME="${{ inputs.branch_type }}/$NEW_VERSION"
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME
-          
