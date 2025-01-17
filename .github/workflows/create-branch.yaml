@@ -1,0 +1,70 @@
+name: Create Feature, Bugfix, or Hotfix Branch and Update Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Type of version update: patch, minor, or major'
+        required: true
+        default: 'patch'
+      branch_type:
+        description: 'Type of branch: feature, bugfix, or hotfix'
+        required: true
+        default: 'feature'
+
+permissions:
+  contents: write
+
+jobs:
+  create-branch-and-update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Get current version from package.json
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "Current version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Increment version based on input type
+        run: |
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ env.VERSION//v/ }}"
+
+          if [[ "${{ inputs.type }}" == "major" ]]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [[ "${{ inputs.type }}" == "minor" ]]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+
+          jq --arg version "$NEW_VERSION" '.version = $version' package.json > package.tmp.json
+          mv package.tmp.json package.json
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: update version to $NEW_VERSION"
+          git push origin HEAD
+
+      - name: Create the new branch
+        run: |
+          BRANCH_TYPE="${{ inputs.branch_type }}"
+          BRANCH_NAME="$BRANCH_TYPE/$NEW_VERSION"
+          git checkout -b $BRANCH_NAME
+          git push origin $BRANCH_NAME
