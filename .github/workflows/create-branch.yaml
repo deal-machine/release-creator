@@ -84,13 +84,9 @@ jobs:
           git commit -m "chore: update version to $NEW_VERSION"
           git push origin HEAD
 
-      - name: Checkout latest release branch
-        run: |
-          # Checa a branch mais recente
           git checkout "origin/release/${{ env.LATEST_VERSION }}"
-
-      - name: Create the new branch from latest release
-        run: |
+      
           BRANCH_NAME="${{ inputs.branch_type }}/$NEW_VERSION"
           git checkout -b $BRANCH_NAME
           git push origin $BRANCH_NAME
+          
